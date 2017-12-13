@@ -13,6 +13,8 @@
 
 #define HANDSHAKE_BUFFER_SIZE 10
 #define BUFFER_SIZE 1000
+#define READ 0
+#define WRITE 1
 
 int server_handshake(int *to_client);
 
