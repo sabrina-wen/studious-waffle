@@ -1,5 +1,11 @@
 #include "pipe_networking.h"
 
+int checkerror(int stat) {
+  if (stat == -1) {
+    printf("ERROR: %s\n", strerror(errno));
+  }
+  return stat;
+}
 
 /*=========================
   server_handshake
@@ -11,31 +17,27 @@
   returns the file descriptor for the upstream pipe.
   =========================*/
 int server_handshake(int *to_client) {
-  while (1) {
     //make named pipe, spipe of server reads from client
     mkfifo("source", 0777);
-    int spipe = open("source", O_RDONLY);
-    if (spipe == -1) {
-      printf("Error creating spipe: %s\n", strerror(errno));
-    }
+    int spipe = checkerror(open("source", O_RDONLY));
     char * client_info; // name of client's pipe
 
     //reads from named pipe (client) (waits for client to do stuff)
-    if (read(spipe, &client_info, sizeof(char*)) == -1) {
-      printf("Read error: %s\n", strerror(errno));
-    }
-    // server prints recieved info from client (name of client's pipe)
+    checkerror(read(spipe, &client_info, sizeof(char*)));
     printf("server recieved: %s\n", client_info);
-    //char * args[] = {"rm", "source", NULL};
-    //execvp(args[0], args);
+
+    //removes name from connection
+    int f= fork();
+    if (!f) {
+      char * args[] = {"rm", "source", NULL};
+      execvp(args[0], args);
+    }
 
     //opens up name of client's pipe, writes back to client
-    /*int cpipe = open(client_info, O_WRONLY);
-    if (write(cpipe, client_info, sizeof(char*)) == -1) {
-      printf("%s\n", strerror(errno));
-    } */
-  }
-  return 0;
+    char * dumb = "successful";
+    *to_client = open(client_info, O_WRONLY);
+    write(*to_client, &dumb, sizeof(char *));
+    return spipe;
 }
 
 
@@ -51,23 +53,29 @@ int server_handshake(int *to_client) {
 int client_handshake(int *to_server) {
   //named pipe; server-WRITES, client READS
   char * client_name = "dknfknsdmagrheu9nvurvn";
-  //mkfifo(client_name, 0744);
-  //int cpipe = open(client_name, O_RDONLY);
-  //if (cpipe == -1) {
-  //  printf("%s\n", strerror(errno));
-//  }
+  mkfifo(client_name, 0744);
 
   //opens pipe from server, writes to server pipe
-  int spipe = open("source", O_WRONLY);
-  if (write(spipe, &client_name, sizeof(char*)) == -1) {
-    printf("%s\n", strerror(errno));
+  *to_server = open("source", O_WRONLY);
+  checkerror(write(*to_server, &client_name, sizeof(char*)));
+
+  //client reads what server has returned
+  char * server_info;
+  int cpipe = checkerror(open(client_name, O_RDONLY));
+  checkerror(read(cpipe, &server_info, sizeof(char *)));
+  printf("%s\n", server_info);
+
+  //if the success message wasn't received, messed up
+  if (strcmp(server_info, "successful")) {
+    return -1;
   }
 
-  // client waits for server to send back info, prints out what info it recieves
-  /*char * server_info;
-  read(cpipe, server_info, sizeof(char*));
+  //makes it an unnamed connection
+  int f = fork();
+  if (!f) {
+    char * args[] = {"rm", client_name, NULL};
+    execvp(args[0], args);
+  }
 
-  printf("client received: %s\n", server_info); */
-
-  return 0;
+  return cpipe;
 }
