@@ -12,24 +12,30 @@
   =========================*/
 int server_handshake(int *to_client) {
   while (1) {
-    //make named pipe
-    mkfifo("source", 0744);
+    //make named pipe, spipe of server reads from client
+    mkfifo("source", 0777);
     int spipe = open("source", O_RDONLY);
-    int client_info;
-  
-    //reads from named pipe (blocks until there is something)
-    read(spipe, &client_info, sizeof(int));
-    printf("%d\n", client_info);
-    char *args[3];
-    args[0] = "rm";
-    args[1] = "source";
-    args[2] = "0";
-    execvp(args[0], args);
+    if (spipe == -1) {
+      printf("Error creating spipe: %s\n", strerror(errno));
+    }
+    char * client_info; // name of client's pipe
 
-    //write to client
-    write(client_info, &client_info, sizeof(int));
+    //reads from named pipe (client) (waits for client to do stuff)
+    if (read(spipe, client_info, sizeof(char*)) == -1) {
+      printf("Read error: %s\n", strerror(errno));
+    }
+    // server prints recieved info from client (name of client's pipe)
+    printf("server recieved: %s\n", client_info);
+    //char * args[] = {"rm", "source", NULL};
+    //execvp(args[0], args);
+
+    //opens up name of client's pipe, writes back to client
+    /*int cpipe = open(client_info, O_WRONLY);
+    if (write(cpipe, client_info, sizeof(char*)) == -1) {
+      printf("%s\n", strerror(errno));
+    } */
   }
-  return 0; 
+  return 0;
 }
 
 
@@ -43,19 +49,25 @@ int server_handshake(int *to_client) {
   returns the file descriptor for the downstream pipe.
   =========================*/
 int client_handshake(int *to_server) {
-  //unnamed pipe; server-WRITES, client READS
-  int cpipe[2];
-  pipe(cpipe);
+  //named pipe; server-WRITES, client READS
+  char * client_name = "dknfknsdmagrheu9nvurvn";
+  //mkfifo(client_name, 0744);
+  //int cpipe = open(client_name, O_RDONLY);
+  //if (cpipe == -1) {
+  //  printf("%s\n", strerror(errno));
+//  }
 
-  //named pipe; connection to server
+  //opens pipe from server, writes to server pipe
   int spipe = open("source", O_WRONLY);
-  write(spipe, &cpipe[WRITE], sizeof(int));
+  if (write(spipe, client_name, sizeof(char*)) == -1) {
+    printf("%s\n", strerror(errno));
+  }
 
-  //receiving server info
-  int server_info;
-  read(cpipe[READ], &server_info, sizeof(int));
+  // client waits for server to send back info, prints out what info it recieves
+  /*char * server_info;
+  read(cpipe, server_info, sizeof(char*));
 
-  printf("%d\n", server_info);
-  
+  printf("client received: %s\n", server_info); */
+
   return 0;
 }
