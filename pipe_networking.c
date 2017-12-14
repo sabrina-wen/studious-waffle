@@ -21,7 +21,7 @@ int server_handshake(int *to_client) {
     char * client_info; // name of client's pipe
 
     //reads from named pipe (client) (waits for client to do stuff)
-    if (read(spipe, client_info, sizeof(char*)) == -1) {
+    if (read(spipe, &client_info, sizeof(char*)) == -1) {
       printf("Read error: %s\n", strerror(errno));
     }
     // server prints recieved info from client (name of client's pipe)
@@ -59,7 +59,7 @@ int client_handshake(int *to_server) {
 
   //opens pipe from server, writes to server pipe
   int spipe = open("source", O_WRONLY);
-  if (write(spipe, client_name, sizeof(char*)) == -1) {
+  if (write(spipe, &client_name, sizeof(char*)) == -1) {
     printf("%s\n", strerror(errno));
   }
 
