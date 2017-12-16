@@ -6,19 +6,13 @@ int main() {
   int to_server;
   int from_server;
 
-  
-  
   from_server = client_handshake( &to_server );
-  /*
-  while (1) {
+  char input[BUFFER_SIZE];
+  while(1) {
     //receives input from user
-    char input[256];
-    fgets(input, 256, stdin);
-    printf("%s\n", input);
-
-    write(to_server, 
-    
-    }*/
-  
-  
+    printf("Whatcha thinkin'?\n");
+    fgets(input, BUFFER_SIZE, stdin);
+    *strchr(input, '\n') = 0;
+    write(to_server, input, sizeof(char*));
+  }
 }
