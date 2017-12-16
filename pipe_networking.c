@@ -37,7 +37,7 @@ int server_handshake(int *to_client) {
 
     //reads ACK from client to server pipe
     char client_str[HANDSHAKE_BUFFER_SIZE];
-    checkerror(read(spipe, client_str, sizeof(char*)));
+    checkerror(read(spipe, client_str, HANDSHAKE_BUFFER_SIZE));
     printf("server recieved: %s\n", client_str);
 
     //removes name from connection
@@ -82,7 +82,7 @@ int client_handshake(int *to_server) {
   }
 
   // client is writing ack to server
-  checkerror(write(*to_server, &ACK, sizeof(char*)));
+  checkerror(write(*to_server, ACK, strlen(ACK)+1));
   printf("client is writing: %s\n", ACK);
 
   //makes it an unnamed connection
