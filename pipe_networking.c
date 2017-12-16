@@ -21,16 +21,16 @@ int server_handshake(int *to_client) {
     //make named pipe, spipe of server reads from client
     mkfifo("source", 0600);
     printf("creating server to client pipe\n");
-    int spipe = checkerror(open("source", O_RDONLY));
-    int client_info; // name of client's pipe
+    
     //reads from named pipe (client) (waits for client to do stuff)
+    int client_info; // name of client's pipe
+    int spipe = checkerror(open("source", O_RDONLY));
     checkerror(read(spipe, &client_info, sizeof(int)));
     printf("server recieved: %d\n", client_info);
 
     //opens up name of client's pipe, writes back to client
     char str_pid[HANDSHAKE_BUFFER_SIZE];
     sprintf(str_pid, "%d", client_info);
-
     *to_client = open(str_pid, O_WRONLY);
     write(*to_client, &client_info, sizeof(char *));
     printf("writing in server to client pipe\n");
